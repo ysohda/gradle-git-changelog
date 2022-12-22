@@ -6,9 +6,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class FlexibleDateParser {
-    private List<ThreadLocal<SimpleDateFormat>> threadLocals;
+    private final List<ThreadLocal<SimpleDateFormat>> threadLocals;
     private static final List<String> formats = Lists.newArrayList(
             "yyyy-MM-dd HH:mm:ss Z",
             "EEE MMM d HH:mm:ss yyyy Z"
@@ -18,18 +19,16 @@ public class FlexibleDateParser {
         threadLocals = Lists.newArrayList();
 
         for (final String format : formats) {
-            ThreadLocal<SimpleDateFormat> dateFormatThreadLocal = new ThreadLocal<SimpleDateFormat>() {
-                protected SimpleDateFormat initialValue() {
-                    SimpleDateFormat dateFormat = new SimpleDateFormat(format);
-                    dateFormat.setLenient(false);
-                    return dateFormat;
-                }
-            };
+            ThreadLocal<SimpleDateFormat> dateFormatThreadLocal = ThreadLocal.withInitial(() -> {
+                SimpleDateFormat dateFormat = new SimpleDateFormat(format, Locale.ENGLISH);
+                dateFormat.setLenient(false);
+                return dateFormat;
+            });
             threadLocals.add(dateFormatThreadLocal);
         }
     }
 
-    public Date parseDate(String dateStr) throws ParseException {
+    public Date parseDate(String dateStr) {
         for (ThreadLocal<SimpleDateFormat> dateFormatThreadLocal : threadLocals) {
             SimpleDateFormat dateFormat = dateFormatThreadLocal.get();
             try {
