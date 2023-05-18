@@ -1,11 +1,3 @@
-apply plugin: 'groovy'
-apply plugin: 'java-gradle-plugin'
-
-sourceCompatibility = 11
-
-group = 'com.selesse'
-version = '0.4.0-SNAPSHOT'
-
 buildscript {
     repositories {
         mavenCentral()
@@ -17,6 +9,30 @@ buildscript {
         classpath 'com.bmuschko:gradle-nexus-plugin:2.3.1'
         classpath 'com.gradle.publish:plugin-publish-plugin:0.9.6'
     }
+}
+
+plugins {
+    id 'com.gradle.plugin-publish' version '1.0.0'
+}
+
+apply plugin: 'groovy'
+apply plugin: 'java-gradle-plugin'
+apply plugin: 'signing'
+
+sourceCompatibility = 11
+
+group = 'io.github.ysohda'
+description = 'Gradle plugin for generating a changelog based on a Git commit history.'
+version = '0.4.0'
+
+if (project.version == 'unspecified') {
+    version = '0.1-SNAPSHOT'
+}
+
+
+ext {
+    websiteUrl = 'https://github.com/ysohda/gradle-git-changelog'
+    sourceUrl = 'https://github.com/ysohda/gradle-git-changelog.git'
 }
 
 repositories {
@@ -46,3 +62,64 @@ task getVersion() {
         println version
     }
 }
+
+task showVersion() { doLast { println(project.version) } }
+
+gradlePlugin {
+    plugins {
+        plugin {
+            id = "${project.group}.${project.name}"
+            displayName = 'Gradle Git Changelog plugin'
+            description = project.description
+            implementationClass = 'com.selesse.gradle.git.GitCommandExecutor'
+        }
+    }
+}
+
+pluginBundle {
+    website = project.websiteUrl
+    vcsUrl = project.sourceUrl
+    tags = ['git', 'changelog']
+}
+
+publishing {
+   publications {
+        mavenJava(MavenPublication) {
+            groupId = project.group
+            artifactId = project.name
+            version = version
+            pom {
+                name = 'io.github.ysohda.gradle-git-changelog.gradle.plugin'
+                description = project.description
+                url = project.websiteUrl
+                scm {
+                    url = "scm:git:${project.sourceUrl}"
+                }
+                licenses {
+                    license {
+                        name = 'unlicense'
+                        url = 'http://unlicense.org'
+                        distribution = 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'selesse'
+                    }
+                    developer {
+                        id = 'Stack8'
+                    }
+                    developer {
+                        id = 'ysohda'
+                    }
+                }
+            }
+            from components.java
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
+}
+
